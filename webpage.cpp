@@ -150,8 +150,6 @@ String getIndexPage(uint8_t currentBrightness, uint8_t currentVolume) {
         </div>
 
         <h2>Sound Controls</h2>
-        // Add or remove button lines below to allow more or less sound files. 
-        // Edit the play sound number to associate to the files on your DFPLayer mini SD Card.
         <div class="vertical-button-group">
             <button onclick="playSound(1)" class="sound-button">Stand Back</button>
             <button onclick="playSound(2)" class="sound-button">Business</button>
