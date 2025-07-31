@@ -1,15 +1,17 @@
 #include "handlers.h"   // Include its own header
 #include "config.h"     // Include common configurations
 #include "animations.h" // For startColorFade, setPixelColorAndBrightness
-#include "webpage.h"    // <--- ADD THIS LINE: Required for getIndexPage()
-#include <WebServer.h>  // <--- ADD THIS LINE: Required for WebServer object
-#include <Adafruit_NeoPixel.h> // <--- ADD THIS LINE: Required for pixels object definition
-#include <DFRobotDFPlayerMini.h> // <--- ADD THIS LINE: Required for myDFPlayer object definition
+#include "webpage.h"    // Required for getIndexPage()
+#include <WebServer.h>  // Required for WebServer object
+#include <Adafruit_NeoPixel.h> // Required for pixels object definition
+#include <DFRobotDFPlayerMini.h> // Required for myDFPlayer object definition
+#include <Adafruit_PWMServoDriver.h> // Added for PCA9685 pwm object definition
 
 // Web Server Handler Definitions
 void handleRoot() {
   Serial.println("Received request for root page (/). Sending HTML.");
   // Call getIndexPage from webpage.h and pass required global variables
+  // Note: currentBrightness and currentVolume are still used for the original K-2SO page
   server.send(200, "text/html", getIndexPage(currentBrightness, currentVolume));
 }
 
@@ -128,4 +130,60 @@ void handleNotFound() {
   Serial.print("Received request for unknown URL: ");
   Serial.println(server.uri());
   server.send(404, "text/plain", "Not Found");
+}
+
+// --- New Servo Control Handler ---
+void handleSetServos() {
+  Serial.println("DEBUG: /setServos handler triggered."); // Debug print to confirm handler is called
+  if (server.hasArg("angle0") && server.hasArg("angle1")) {
+    Serial.print("DEBUG: Has 'angle0' arg: "); Serial.println(server.hasArg("angle0"));
+    Serial.print("DEBUG: Has 'angle1' arg: "); Serial.println(server.hasArg("angle1"));
+    Serial.print("DEBUG: Raw 'angle0' value: "); Serial.println(server.arg("angle0"));
+    Serial.print("DEBUG: Raw 'angle1' value: "); Serial.println(server.arg("angle1"));
+
+    int angle0 = server.arg("angle0").toInt();
+    int angle1 = server.arg("angle1").toInt();
+
+    if ((angle0 >= ANGLE_MIN && angle0 <= ANGLE_MAX) &&
+        (angle1 >= ANGLE_MIN && angle1 <= ANGLE_MAX)) {
+      Serial.print("Web Command: Setting Servo 0 to "); Serial.print(angle0);
+      Serial.print(" and Servo 1 to "); Serial.print(angle1); Serial.println(" degrees.");
+      moveServo(0, angle0);
+      moveServo(1, angle1);
+      server.send(200, "text/plain", "OK");
+    } else {
+      Serial.print("DEBUG: Invalid angles received: S0="); Serial.print(angle0);
+      Serial.print(", S1="); Serial.println(angle1);
+      server.send(400, "text/plain", "Invalid angle values.");
+    }
+  } else {
+    Serial.println("DEBUG: Missing angle parameters for /setServos.");
+    server.send(400, "text/plain", "Missing angle parameters.");
+  }
+}
+
+/**
+ * @brief Moves a specified servo to a given angle using its calibrated pulse range.
+ * @param servoNum The servo to move (0 or 1).
+ * @param angle The target angle (0-270).
+ */
+void moveServo(int servoNum, int angle) {
+  int pulse = 0;
+  if (servoNum == 0) {
+    // Map angle for Servo 0 using its specific min/max pulse values
+    pulse = map(angle, ANGLE_MIN, ANGLE_MAX, SERVO0_MIN_PULSE, SERVO0_MAX_PULSE);
+    pwm.setPWM(SERVO1_CHANNEL, 0, pulse); // Note: SERVO1_CHANNEL is 0 for Servo 0
+  } else if (servoNum == 1) {
+    // Map angle for Servo 1 using its specific min/max pulse values
+    pulse = map(angle, ANGLE_MIN, ANGLE_MAX, SERVO1_MIN_PULSE, SERVO1_MAX_PULSE);
+    pwm.setPWM(SERVO2_CHANNEL, 0, pulse); // Note: SERVO2_CHANNEL is 1 for Servo 1
+  } else {
+    Serial.println("Error: Invalid servo number passed to moveServo.");
+    return;
+  }
+
+  Serial.print("  -> Servo ");
+  Serial.print(servoNum);
+  Serial.print(" setting pulse to: ");
+  Serial.println(pulse);
 }
