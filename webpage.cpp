@@ -1,15 +1,24 @@
 #include "webpage.h"
+#include "config.h" // Include config.h to use ANGLE_MIN, ANGLE_CENTER, ANGLE_MAX
 
 String getIndexPage(uint8_t currentBrightness, uint8_t currentVolume) {
   String html = R"rawliteral(
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8"> <!-- Added UTF-8 character set declaration -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>K-2SO</title>
     <style>
         body { font-family: Arial, Helvetica, Sans-Serif; text-align: center; background-color: #222; color: #FFF; margin-top: 50px; }
-        .container { max-width: 400px; margin: auto; padding: 20px; border: 1px solid #444; border-radius: 8px; background-color: #333; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .container { 
+            max-width: 400px; 
+            margin: auto; 
+            padding: 20px; 
+            border: 1px solid #444; 
+            border-radius: 8px; 
+            background-color: #333; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.5); }
         h1, h2 { color: #FFF; }
         h2 { margin-top: 20px; }
 
@@ -115,13 +124,110 @@ String getIndexPage(uint8_t currentBrightness, uint8_t currentVolume) {
         }
 
         #statusMessage { margin-top: 20px; color: #FFD700; font-weight: bold; }
+
+        .servo-control-section {
+            margin-top: 20px; /* Reduced margin-top to integrate better */
+            padding-top: 0; /* Removed padding-top */
+            border-top: none; /* Removed border-top */
+        }
+        .servo-control-section h2 {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .servo-button-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 columns, equal width */
+            gap: 0.5rem; /* Reduced gap between buttons */
+            margin-bottom: 1.5rem; /* Reduced margin */
+            max-width: 12rem; /* Condensed width for gamepad look */
+            margin-left: auto;
+            margin-right: auto;
+            background-color: #444; /* Slightly darker background for the grid */
+            padding: 0.5rem;
+            border-radius: 0.75rem;
+        }
+        .servo-button-grid button {
+            background-color: #000000; /* Matched Flicker/Pulse button background */
+            color: #ffffff;
+            font-weight: 600;
+            width: 3.5rem; /* Fixed width for square buttons */
+            height: 3.5rem; /* Fixed height for square buttons */
+            padding: 0; /* Remove padding to let SVG fill */
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            border: none;
+            cursor: pointer;
+            display: flex; /* Use flex to center SVG */
+            align-items: center;
+            justify-content: center;
+        }
+        .servo-button-grid button:hover {
+            background-color: #333333; /* Matched Flicker/Pulse button hover background */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+        .servo-button-grid button:active {
+            transform: translateY(0); /* Press effect */
+            box-shadow: none;
+        }
+        .servo-button-grid svg {
+            width: 70%; /* Make SVG fill most of the button */
+            height: 70%;
+            fill: currentColor; /* Inherit button color */
+            stroke: currentColor; /* For arrow lines */
+            stroke-width: 2; /* For arrow lines */
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>K-2SO</h1>
+        <h1>K-2SO Control</h1>
 
-        <h2>Eye Control</h2>
+        <div class="servo-control-section">
+            <h2>Eye Controls</h2>
+            <div class="servo-button-grid">
+                <!-- Button 1: Servo0 = Max, Servo1=Max (Up-Left) -->
+                <button onclick="setServos(270, 270)">
+                    <svg viewBox="0 0 24 24"><path d="M17 17 L7 7 M7 7 L14 7 M7 7 L7 14"/></svg>
+                </button>
+                <!-- Button 2: Servo0 = Max, Servo1=Center (Up) -->
+                <button onclick="setServos(270, 90)">
+                    <svg viewBox="0 0 24 24"><path d="M12 19 L12 5 M12 5 L7 10 M12 5 L17 10"/></svg>
+                </button>
+                <!-- Button 3: Servo0=Max, Servo1=Min (Up-Right) -->
+                <button onclick="setServos(270, 0)">
+                    <svg viewBox="0 0 24 24"><path d="M7 17 L17 7 M17 7 L10 7 M17 7 L17 14"/></svg>
+                </button>
+
+                <!-- Button 4: Servo0=center, Servo1=Max (Left) -->
+                <button onclick="setServos(90, 270)">
+                    <svg viewBox="0 0 24 24"><path d="M19 12 L5 12 M5 12 L10 7 M5 12 L10 17"/></svg>
+                </button>
+                <!-- Button 5: Servo0=center, servo1=center (Center Dot) -->
+                <button onclick="setServos(90, 90)">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg>
+                </button>
+                <!-- Button 6: Servo0=center, servo1=Min (Right) -->
+                <button onclick="setServos(90, 0)">
+                    <svg viewBox="0 0 24 24"><path d="M5 12 L19 12 M19 12 L14 7 M19 12 L14 17"/></svg>
+                </button>
+
+                <!-- Button 7: Servo0=Min, Servo1=Max (Down-Left) -->
+                <button onclick="setServos(0, 270)">
+                    <svg viewBox="0 0 24 24"><path d="M17 7 L7 17 M7 17 L14 17 M7 17 L7 10"/></svg>
+                </button>
+                <!-- Button 8: Servo0=Min, Servo1=Center (Down) -->
+                <button onclick="setServos(0, 90)">
+                    <svg viewBox="0 0 24 24"><path d="M12 5 L12 19 M12 19 L7 14 M12 19 L17 14"/></svg>
+                </button>
+                <!-- Button 9: Servo0=Min, Servo1=Min (Down-Right) -->
+                <button onclick="setServos(0, 0)">
+                    <svg viewBox="0 0 24 24"><path d="M7 7 L17 17 M17 17 L10 17 M17 17 L17 10"/></svg>
+                </button>
+            </div>
+        </div>        
         <div class="color-button-group">
             <button onclick="setColor('red')" class="red color-button">R</button>
             <button onclick="setColor('green')" class="green color-button">G</button>
@@ -141,15 +247,16 @@ String getIndexPage(uint8_t currentBrightness, uint8_t currentVolume) {
   html += String(currentBrightness);
   html += R"rawliteral(" onchange="setBrightness(this.value)">
         </div>
-
+        <h2>Sound Controls</h2>
         <div class="slider-container">
             <label for="volumeSlider">Volume</label>
             <input type="range" id="volumeSlider" name="value" min="0" max="30" value=")rawliteral";
   html += String(currentVolume);
   html += R"rawliteral(" class="volume-slider" onchange="setVolume(this.value)">
         </div>
-
-        <h2>Sound Controls</h2>
+        
+        <!-- Add or remove button lines below to allow more or less sound files. -->
+        <!-- Edit the play sound number to associate to the files on your DFPLayer mini SD Card. -->
         <div class="vertical-button-group">
             <button onclick="playSound(1)" class="sound-button">Stand Back</button>
             <button onclick="playSound(2)" class="sound-button">Business</button>
@@ -164,8 +271,9 @@ String getIndexPage(uint8_t currentBrightness, uint8_t currentVolume) {
         </div>
         
         <div id="statusMessage"></div>
-
-    </div> <script>
+        
+    </div> 
+    <script>
         const brightnessSlider = document.getElementById('brightnessSlider');
         const volumeSlider = document.getElementById('volumeSlider');
         const statusMessage = document.getElementById('statusMessage');
@@ -273,6 +381,36 @@ String getIndexPage(uint8_t currentBrightness, uint8_t currentVolume) {
                     showStatus('Network error. Check connection.', true);
                 });
         }
+
+        // --- NEW SERVO CONTROL FUNCTIONS ---
+        // Function to send commands for both servos
+        function setServos(angle0, angle1) {
+            console.log("Setting Servo 0 to " + angle0 + " and Servo 1 to " + angle1 + " degrees.");
+            // Send a single request to the ESP32 with both angles
+            const url = `/setServos?angle0=${angle0}&angle1=${angle1}`;
+            showStatus(`Moving servos...`);
+            fetch(url)
+                .then(response => {
+                    if (response.ok) {
+                        console.log(`Servos moved successfully to S0:${angle0}, S1:${angle1}`);
+                        showStatus(`Servos moved.`);
+                    } else {
+                        console.error(`Failed to move servos. Status: ${response.status}`);
+                        showStatus(`Error moving servos: ${response.status}`, true);
+                    }
+                })
+                .catch(error => {
+                    console.error('Network error:', error);
+                    showStatus('Network error. Check connection.', true);
+                });
+        }
+
+        // Initial setup on page load (centers servos)
+        window.onload = function() {
+            // Original K-2SO page might have its own onload, ensure this runs after.
+            // Or if this is the only onload, it will center servos immediately.
+            setServos(90, 90); // Center both servos on page load
+        };
     </script>
 </body>
 </html>
