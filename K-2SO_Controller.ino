@@ -4,7 +4,7 @@
 #include <ESPmDNS.h>
 #include <Adafruit_NeoPixel.h>
 #include <DFRobotDFPlayerMini.h>
-//#include <SoftwareSerial.h> // For DFPlayer
+#include <Adafruit_PWMServoDriver.h> // Added for PCA9685
 
 // Include your custom header files
 #include "config.h"     // <--- ESSENTIAL: This must be included here
@@ -17,12 +17,13 @@
 // They match the 'extern' declarations in config.h.
 Adafruit_NeoPixel pixels(NUM_PIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-//SoftwareSerial mySoftwareSerial(DFPLAYER_RX_PIN, DFPLAYER_TX_PIN); // RX, TX
 HardwareSerial &mySerial = Serial2; // Define a reference to Serial2
 
 DFRobotDFPlayerMini myDFPlayer;
 
 WebServer server(80); // Web server on port 80
+
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(PCA9685_I2C_ADDRESS); // Added for PCA9685
 
 uint32_t currentColor = pixels.Color(0, 0, 0); // Initial color (off)
 uint8_t currentBrightness = BRIGHTNESS;         // Current pixel brightness
@@ -36,9 +37,14 @@ uint8_t fadeStartBrightness = 0;
 uint32_t fadeStartColor = 0;
 uint32_t fadeTargetColor = 0;
 
+// --- FORWARD DECLARATION ---
+// This tells the compiler that 'moveServo' exists in handlers.cpp,
+// so it can be called before its full definition appears.
+void moveServo(int servoNum, int angle);
 
 void setup() {
   Serial.begin(115200);
+  while (!Serial); // Wait for Serial Monitor to open
 
   // Initialize NeoPixel
   pixels.begin();
@@ -60,22 +66,51 @@ void setup() {
   Serial.println(WIFI_SSID); // Use the #define here
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD); // Use the #define here
 
-  while (WiFi.status() != WL_CONNECTED) {
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) { // Limit attempts to avoid infinite loop
     delay(500);
     Serial.print(".");
+    attempts++;
   }
-  Serial.println("\nWiFi connected.");
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\nWiFi connected.");
+    Serial.print("IP Address: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("\nFailed to connect to WiFi. Please check SSID and password.");
+    Serial.println("Halting program due to WiFi connection failure.");
+    while (1); // Halt execution if WiFi connection fails
+  }
 
   // --- MDNS Setup ---
   if (!MDNS.begin("k2so")) { // Set custom hostname (e.g., http://k2so.local)
     Serial.println("Error setting up MDNS responder!");
-    while (1) {
-      delay(1000);
-    }
+    // No halt here, as MDNS is not critical for basic operation
+  } else {
+    Serial.println("MDNS responder started (k2so.local)");
   }
-  Serial.println("MDNS responder started (k2so.local)");
+
+  // --- PCA9685 Servo Initialization ---
+  Serial.print("Attempting to initialize PCA9685 at address 0x");
+  Serial.println(PCA9685_I2C_ADDRESS, HEX);
+  Wire.begin(I2C_SDA, I2C_SCL); // Initialize I2C bus with specific pins
+  if (!pwm.begin()) {
+    Serial.println("ERROR: PCA9685 initialization failed! Check wiring, power, and I2C address.");
+    Serial.println("Halting program due to PCA9685 error.");
+    while (1); // Halt execution if initialization fails
+  }
+  Serial.println("PCA9685 Initialized Successfully!");
+  pwm.setPWMFreq(SERVO_FREQ);
+  Serial.print("PWM Frequency set to: ");
+  Serial.print(SERVO_FREQ);
+  Serial.println("Hz.");
+
+  // --- Servo Centering on Startup ---
+  Serial.println("Centering servos...");
+  moveServo(0, ANGLE_CENTER); // Center Servo 0
+  moveServo(1, ANGLE_CENTER); // Center Servo 1
+  delay(1000); // Give servos time to move
 
   // --- Web Server Setup ---
   server.on("/", handleRoot);
@@ -89,6 +124,32 @@ void setup() {
   server.on("/flicker", handleFlicker);
   server.on("/pulse", handlePulse);
   server.on("/playSound", handlePlaySound);
+  // Add new servo control handler
+  server.on("/setServos", HTTP_GET, []() {
+    Serial.println("DEBUG: /setServos handler triggered.");
+    if (server.hasArg("angle0") && server.hasArg("angle1")) {
+      int angle0 = server.arg("angle0").toInt();
+      int angle1 = server.arg("angle1").toInt();
+
+      if ((angle0 >= ANGLE_MIN && angle0 <= ANGLE_MAX) &&
+          (angle1 >= ANGLE_MIN && angle1 <= ANGLE_MAX)) {
+        Serial.print("Web Command: Setting Servo 0 to "); Serial.print(angle0);
+        Serial.print(" and Servo 1 to "); Serial.print(angle1); Serial.println(" degrees.");
+        moveServo(0, angle0);
+        moveServo(1, angle1);
+        server.send(200, "text/plain", "OK");
+      } else {
+        Serial.print("DEBUG: Invalid angles received: S0="); Serial.print(angle0);
+        Serial.print(", S1="); Serial.println(angle1);
+        server.send(400, "text/plain", "Invalid angle values.");
+      }
+    } else {
+      Serial.println("DEBUG: Missing angle parameters for /setServos.");
+      server.send(400, "text/plain", "Missing angle parameters.");
+    }
+  });
+
+
   server.onNotFound(handleNotFound);
 
   server.begin();
@@ -99,6 +160,6 @@ void setup() {
 
 void loop() {
   server.handleClient();
-  //MDNS.update();
+  //MDNS.update(); // Uncomment if you use MDNS
   handlePixelAnimations(); // Call the animation handler
 }
