@@ -6,6 +6,8 @@ Current hardware:
 - DFPlayer Mini, plus SD Card.
 - WS2812 or similar NeoPixels
 - SN74AHCT125N Logic level shifter.
+- PCA9685 I2C Servo Control Board
+- Modi9 11kg Servo x 2
 
 ________________________________________
 Wiring Diagram
