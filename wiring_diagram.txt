@@ -1,23 +1,29 @@
-Level Shifter
-- VCC -> 5V (External Power)
-- GND -> GND (Common Ground)
-- 1A -> ESP32 GPIO##
-- 1OE -> GND
-- 1Y -> NeoPixel Din
-    ** If have anomalies withe chip tie all other A and OE pins to ground.
-
-NeoPixel Strip(s)
-- VCC -> 5V (External Power)
-- GND -> GND (Common Ground)
-
 DFPlayer Mini
-- TX -> ESP32 GPIO##
-- RX -> ESP32 GPIO##
-- VCC -> 5V (External Power)
+- Vcc -> 5V (External Power)
 - GND -> GND (Common Ground)
-- SPK+ -> Speaker Positive
-- SPK- -> Speaker Negative
+- Rx -> ESP32 GPIO 27
+- Tx -> ESP32 GPIO 26
 
-ESP32 (Additional Pins)
-- VCC -> 5V (External Power) ***** Only needed if not powering from USB *****
+Level Shifter
+- Pin 1 -> GND (Common Ground)
+- Pin 7 -> GND (Common Ground)
+- Pin 2 -> ESP32 GPIO 13
+- Pin 14 -> 5V (External Power)
+
+Pixels 
+- 5V -> 5V (External Power)
 - GND -> GND (Common Ground)
+- Data -> Level Shifter Pin 3
+
+PCA9685
+- Vcc -> ESP32 3.3V
+- V+ -> 5v (External Power)
+- GND -> GND (Common Ground)
+- SCL -> ESP32 GPIO 21
+- SDA -> ESP32 GPIO 22
+- S0 -> Vertical Servo
+- S1 -> Horizontal Servo
+
+ESP32
+- GND -> GND (Common Ground)
+- Vcc -> 5V (External Power)
