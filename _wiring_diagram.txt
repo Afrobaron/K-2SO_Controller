@@ -1,5 +1,5 @@
 DFPlayer Mini
-- Vcc -> 5V (External Power)
+- Vcc -> ESP32 3.3V
 - GND -> GND (Common Ground)
 - Rx -> ESP32 GPIO 27
 - Tx -> ESP32 GPIO 26
