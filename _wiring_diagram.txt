@@ -20,7 +20,7 @@ PCA9685
 - V+ -> 5v (External Power)
 - GND -> GND (Common Ground)
 - SCL -> ESP32 GPIO 21
-- SDA -> ESP32 GPIO 22
+- SDA -> ESP32 GPIO 23
 - S0 -> Vertical Servo
 - S1 -> Horizontal Servo
 
