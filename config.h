@@ -25,7 +25,7 @@
 #define DFPLAYER_TX_PIN 27   // Connect to DFPlayer RX
 
 // --- PCA9685 Servo Configuration ---
-#define I2C_SDA 22           // SDA (Data Line) for ESP32
+#define I2C_SDA 23           // SDA (Data Line) for ESP32
 #define I2C_SCL 21           // SCL (Clock Line) for ESP32
 #define PCA9685_I2C_ADDRESS 0x40 // PCA9685 I2C Address
 
