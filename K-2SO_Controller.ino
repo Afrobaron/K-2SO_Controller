@@ -25,9 +25,9 @@ WebServer server(80); // Web server on port 80
 
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(PCA9685_I2C_ADDRESS); // Added for PCA9685
 
-uint32_t currentColor = pixels.Color(0, 0, 0); // Initial color (off)
+uint32_t currentColor = pixels.Color(100, 100, 100); // Initial color (off)
 uint8_t currentBrightness = BRIGHTNESS;         // Current pixel brightness
-uint8_t currentVolume = 15;                     // Initial DFPlayer volume (0-30)
+uint8_t currentVolume = 25;                     // Initial DFPlayer volume (0-30)
 
 // Animation state variables
 PixelMode currentPixelMode = SOLID_COLOR;
@@ -52,6 +52,10 @@ void setup() {
 
   // Initialize DFPlayer Mini
   mySerial.begin(9600, SERIAL_8N1, DFPLAYER_RX_PIN, DFPLAYER_TX_PIN);
+
+  Serial.println("Waiting for DFPlayer to boot...");
+  delay(2000); // <--- ADD THIS DELAY: Give the MP3 chip 2 seconds to read the SD card
+  
   if (myDFPlayer.begin(mySerial)) {
     Serial.println(F("DFPlayer Mini online."));
     myDFPlayer.volume(currentVolume); // Set initial volume
@@ -61,28 +65,41 @@ void setup() {
     Serial.println(F("DFPlayer Mini not connected or error!"));
   }
 
-  // --- WiFi Connection ---
-  Serial.print("Attempting to connect to WiFi network: ");
-  Serial.println(WIFI_SSID); // Use the #define here
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD); // Use the #define here
-
+// --- WiFi Connection ---
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  
+  Serial.print("Connecting to WiFi");
+  
   int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 20) { // Limit attempts to avoid infinite loop
+  // Try to connect for 10 seconds (20 attempts * 500ms)
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
     delay(500);
     Serial.print(".");
     attempts++;
   }
 
+  // Check if we successfully connected to the home network
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\nWiFi connected.");
+    Serial.println("\nConnected to home network!");
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
   } else {
-    Serial.println("\nFailed to connect to WiFi. Please check SSID and password.");
-    Serial.println("Halting program due to WiFi connection failure.");
-    while (1); // Halt execution if WiFi connection fails
+    // If not, spin up the fallback Access Point
+    Serial.println("\nHome network not found. Starting Fallback AP...");
+    
+    WiFi.disconnect();      // Clear the failed station configuration
+    WiFi.mode(WIFI_AP);     // Switch ESP32 to Access Point mode
+    
+    // Start the AP using the credentials from config.h
+    WiFi.softAP(AP_SSID, AP_PASS);
+    
+    Serial.println("Fallback AP is active.");
+    Serial.print("Connect to SSID: ");
+    Serial.println(AP_SSID);
+    Serial.print("Webpage IP: ");
+    Serial.println(WiFi.softAPIP()); // This will default to 192.168.4.1
   }
-
   // --- MDNS Setup ---
   if (!MDNS.begin("k2so")) { // Set custom hostname (e.g., http://k2so.local)
     Serial.println("Error setting up MDNS responder!");
