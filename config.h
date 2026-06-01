@@ -11,9 +11,13 @@
 #include <Adafruit_PWMServoDriver.h> // Added for PCA9685
 
 // --- WiFi Configuration ---
-// CHANGE THESE TO #DEFINE TO AVOID MULTIPLE DEFINITION ERRORS
-#define WIFI_SSID         "YOUR_SSID"         // REPLACE WITH YOUR WIFI NETWORK NAME
-#define WIFI_PASSWORD     "YOUR_PASSWORD"     // REPLACE WITH YOUR WIFI NETWORK PASSWORD
+#define WIFI_SSID         "YOUR_SSID_HERE"         // REPLACE WITH YOUR WIFI NETWORK NAME
+#define WIFI_PASSWORD     "YOUR_PASSWORD_HERE"     // REPLACE WITH YOUR WIFI NETWORK PASSWORD
+
+// Fallback Access Point Settings (Used if the above network is unavailable to join)
+//change these values as desired
+#define AP_SSID           "K2SO_Controller"
+#define AP_PASS           "rebel_scum" // Password must be 8+ characters, or leave as "" for open
 
 // --- NeoPixel Configuration ---
 #define LED_PIN    13        // Data pin for your NeoPixel (connect to level shifter input)
@@ -21,8 +25,8 @@
 #define BRIGHTNESS 50        // Default NeoPixel brightness (0-255)
 
 // --- DFPlayer Mini Pins ---
-#define DFPLAYER_RX_PIN 26   // Connect to DFPlayer TX
-#define DFPLAYER_TX_PIN 27   // Connect to DFPlayer RX
+#define DFPLAYER_RX_PIN 27   // Connect to DFPlayer TX
+#define DFPLAYER_TX_PIN 26   // Connect to DFPlayer RX
 
 // --- PCA9685 Servo Configuration ---
 #define I2C_SDA 23           // SDA (Data Line) for ESP32
